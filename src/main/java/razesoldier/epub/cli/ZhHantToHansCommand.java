@@ -37,6 +37,9 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 class ZhHantToHansCommand implements Command {
     private CommandLine commandLine;
@@ -58,35 +61,23 @@ class ZhHantToHansCommand implements Command {
 
         try (EPUBReader epubReader = new EPUBReader(srcPath)) {
             EPUBBook epubBook = epubReader.getBook();
+            ExecutorService executorService = Executors.newFixedThreadPool(3);
             for (Map.Entry<String, EPUBBook.Manifest> entry : epubBook.getManifests().entrySet()) {
                 EPUBBook.Manifest manifest = entry.getValue();
                 if (!manifest.getMediaType().equals("application/xhtml+xml")) {
                     continue;
                 }
-                String manifestText = epubReader.readManifest(manifest.getFilePath());
-                epubReader.writeManifest(manifest.getFilePath(), handleManifestText(manifestText));
+                executorService.execute(new ConvertTask(manifest, epubReader, variantConverter));
             }
+            executorService.shutdown();
 
             String ncxText = handleNCX(epubReader.readFileWithStream(epubBook.getSpines().getSpineFilePath()));
             epubReader.writeFile(epubBook.getSpines().getSpineFilePath(), ncxText);
-        } catch (InitException | IOException | ZipReadException | ZipEntryNotFoundException | ParserConfigurationException | SAXException e) {
+            executorService.awaitTermination(1, TimeUnit.MINUTES);
+        } catch (InitException | IOException | ZipReadException | ZipEntryNotFoundException | ParserConfigurationException
+                | SAXException | InterruptedException e) {
             throw new ExecuteException(e);
         }
-    }
-
-    private String handleManifestText(@NotNull String manifestText) {
-        Document document = Jsoup.parse(manifestText);
-        Element div = document.body().getElementsByTag("div").get(0);
-        Elements pList = div.children();
-
-        pList.forEach(element -> {
-            if (!element.nodeName().equals("p")) {
-                return;
-            }
-            element.text(variantConverter.convert(element.text())); // Do zh-hant to zh-hans
-        });
-
-        return document.html();
     }
 
     private String handleNCX(@NotNull InputStream is) throws ParserConfigurationException, IOException, SAXException {
@@ -106,5 +97,42 @@ class ZhHantToHansCommand implements Command {
         LSSerializer serializer = implLS.createLSSerializer();
         serializer.getDomConfig().setParameter("format-pretty-print", true);
         return serializer.writeToString(document);
+    }
+
+    private static class ConvertTask implements Runnable {
+        private EPUBBook.Manifest manifest;
+        private EPUBReader reader;
+        private VariantConverter variantConverter;
+
+        @Contract(pure = true)
+        private ConvertTask(@NotNull EPUBBook.Manifest manifest, @NotNull EPUBReader reader, @NotNull VariantConverter variantConverter) {
+            this.manifest = manifest;
+            this.reader = reader;
+            this.variantConverter = variantConverter;
+        }
+
+        public void run() {
+            try {
+                String text = reader.readManifest(manifest.getFilePath());
+                reader.writeManifest(manifest.getFilePath(), doConvert(text));
+            } catch (ZipEntryNotFoundException | ZipReadException | IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        private String doConvert(@NotNull String text) {
+            Document document = Jsoup.parse(text);
+            Element div = document.body().getElementsByTag("div").get(0);
+            Elements pList = div.children();
+
+            pList.forEach(element -> {
+                if (!element.nodeName().equals("p")) {
+                    return;
+                }
+                element.text(variantConverter.convert(element.text())); // Do zh-hant to zh-hans
+            });
+
+            return document.html();
+        }
     }
 }
