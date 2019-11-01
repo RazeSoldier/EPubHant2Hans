@@ -40,4 +40,25 @@ class EPUBReaderTest {
         assertEquals("The Seventy's Course in Theology (Third Year) / The Doctrine of Deity",
                 getReader().getBook().getBookName());
     }
+
+    @Test
+    void testGetMetadata() throws InitException, URISyntaxException {
+        assertEquals("B. H. Roberts", getReader().getBook().getMetadata().get("creator"));
+    }
+
+    @Test
+    void testGetLanguage() throws InitException, URISyntaxException {
+        assertEquals("en", getReader().getBook().getLanguage());
+    }
+
+    @Test
+    void testGetSpineFilePath() throws InitException, URISyntaxException {
+        assertEquals("/OEBPS/toc.ncx", getReader().getBook().getSpines().getSpineFilePath());
+    }
+
+    @Test
+    void testGetNcx() throws InitException, URISyntaxException {
+        assertEquals("The Seventy's Course in Theology (Third Year)\n" +
+                "The Doctrine of Deity", getReader().getBook().getNcx().getTitle());
+    }
 }

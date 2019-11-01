@@ -19,6 +19,7 @@ package razesoldier.epub.reader;
 
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -83,6 +84,11 @@ public class EPUBBook {
         return spines;
     }
 
+    @NotNull
+    public NCX getNcx() {
+        return ncx;
+    }
+
     public static class Manifest {
         private String id;
         private String filePath;
@@ -132,7 +138,7 @@ public class EPUBBook {
         }
     }
 
-    static class NCX {
+    public static class NCX {
         private String title;
         private String author;
         private Map<String, String> metadata;
@@ -154,18 +160,58 @@ public class EPUBBook {
             this.navPointMap = navPointMap;
         }
 
-        static class NavPoint {
+        @Nullable
+        public String getTitle() {
+            return title;
+        }
+
+        @Nullable
+        public String getAuthor() {
+            return author;
+        }
+
+        @NotNull
+        public Map<String, String> getMetadata() {
+            return metadata;
+        }
+
+        @NotNull
+        public Map<String, NavPoint> getNavPointMap() {
+            return navPointMap;
+        }
+
+        public static class NavPoint {
             private Integer order;
             private String id;
             private String text;
             private String contentRef;
 
             @Contract(pure = true)
-            NavPoint(Integer order, String id, String text, String contentRef) {
+            NavPoint(@NotNull Integer order, @NotNull String id, @NotNull String text, @NotNull String contentRef) {
                 this.order = order;
                 this.id = id;
                 this.text = text;
                 this.contentRef = contentRef;
+            }
+
+            @NotNull
+            public Integer getOrder() {
+                return order;
+            }
+
+            @NotNull
+            public String getId() {
+                return id;
+            }
+
+            @NotNull
+            public String getText() {
+                return text;
+            }
+
+            @NotNull
+            public String getContentRef() {
+                return contentRef;
             }
         }
     }
