@@ -24,6 +24,7 @@ class CommandLineParser {
     CommandLine parse(@NotNull Options options, @NotNull String[] arguments) {
         String context = null;
         String argName = null;
+        boolean withValue = false;
         CommandLine commandLine = new CommandLine();
         for (String argument : arguments) {
             // Handle value for a option
@@ -33,25 +34,29 @@ class CommandLineParser {
                     if (opt == null) {
                         context = null;
                         argName = null;
-                        continue;
-                    }
-                    if (opt.isWithValue()) {
-                        commandLine.addOption(opt, argument);
+                        if (withValue) {
+                            continue;
+                        }
                     } else {
-                        commandLine.addOption(opt, null);
+                        if (opt.isWithValue()) {
+                            commandLine.addOption(opt, argument);
+                        } else {
+                            commandLine.addOption(opt, null);
+                        }
                     }
                 }
-                if (context.equals("short")) {
+                if (withValue && context.equals("short")) {
                     Option opt = options.getOptionByShort(argName);
                     if (opt == null) {
                         context = null;
                         argName = null;
                         continue;
-                    }
-                    if (opt.isWithValue()) {
-                        commandLine.addOption(opt, argument);
                     } else {
-                        commandLine.addOption(opt, null);
+                        if (opt.isWithValue()) {
+                            commandLine.addOption(opt, argument);
+                        } else {
+                            commandLine.addOption(opt, null);
+                        }
                     }
                 }
                 context = null;
@@ -61,12 +66,14 @@ class CommandLineParser {
             if (argument.indexOf("--") == 0) {
                 context = "long";
                 argName = argument.substring(2);
+                withValue = options.getOptionByLong(argName) != null;
                 continue;
             }
             // Handle short option
             if (argument.indexOf("-") == 0) {
                 context = "short";
                 argName = argument.substring(1);
+                withValue = options.getOptionByShort(argName) != null;
             }
         }
         // Prevent loss of unhandled context

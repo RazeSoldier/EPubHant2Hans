@@ -68,6 +68,7 @@ test {
             '--add-modules', 'ALL-MODULE-PATH',
             '--add-reads', "$moduleName=org.junit.jupiter,org.junit.jupiter.api,org.junit.jupiter.params",
             '--add-opens', "razesoldier.epub/razesoldier.epub.reader=org.junit.platform.commons",
+            '--add-opens', "razesoldier.epub/razesoldier.epub.cli=org.junit.platform.commons",
             '--patch-module', "$moduleName=" + files(sourceSets.test.java.outputDir).asPath,
         ]
         classpath = files()
