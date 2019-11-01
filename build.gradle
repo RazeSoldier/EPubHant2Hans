@@ -3,6 +3,7 @@ import java.util.regex.Matcher
 plugins {
     id 'java'
     id 'application'
+    id "org.beryx.jlink" version "2.16.2"
 }
 
 group 'razesoldier'
@@ -111,7 +112,26 @@ afterEvaluate {
         inputs.property("moduleName", moduleName)
         manifest {
             attributes('Automatic-Module-Name': moduleName)
+            attributes 'Implementation-Title': "EPubHant2Hans",
+                    'Main-Class': 'razesoldier.epub.cli.CliEntry'
         }
+    }
+}
+
+
+jlink {
+    launcher {
+        name = 'epubconverter'
+        jvmArgs = ['-Dfile.encoding=UTF-8']
+    }
+    imageName.set("epubconverter-image")
+    addOptions("--bind-services")
+}
+
+tasks.jlink.doLast {
+    copy {
+        from('src/main/resources')
+        into("$buildDir/image/bin")
     }
 }
 
