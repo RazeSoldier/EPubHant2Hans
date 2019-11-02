@@ -61,6 +61,9 @@ class ZhHantToHansCommand implements Command {
 
         try (EPUBReader epubReader = new EPUBReader(srcPath)) {
             EPUBBook epubBook = epubReader.getBook();
+            // Use multithreading in batch operations that convert Manifest.
+            // Since the IO target of each task are different,
+            // we don't have to worry about resource sharing conflicts.
             ExecutorService executorService = Executors.newFixedThreadPool(3);
             for (Map.Entry<String, EPUBBook.Manifest> entry : epubBook.getManifests().entrySet()) {
                 EPUBBook.Manifest manifest = entry.getValue();
@@ -73,7 +76,8 @@ class ZhHantToHansCommand implements Command {
 
             String ncxText = handleNCX(epubReader.readFileWithStream(epubBook.getSpines().getSpineFilePath()));
             epubReader.writeFile(epubBook.getSpines().getSpineFilePath(), ncxText);
-            executorService.awaitTermination(1, TimeUnit.MINUTES);
+
+            executorService.awaitTermination(1, TimeUnit.MINUTES); // TODO: For large EPUB files, it may time out
         } catch (InitException | IOException | ZipReadException | ZipEntryNotFoundException | ParserConfigurationException
                 | SAXException | InterruptedException e) {
             throw new ExecuteException(e);
