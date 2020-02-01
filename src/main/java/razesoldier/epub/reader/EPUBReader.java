@@ -39,7 +39,7 @@ public class EPUBReader implements Closeable {
 
     public EPUBReader(@NotNull String path) throws InitException {
         try {
-            fileSystem = FileSystems.newFileSystem(Paths.get(new File(path).toURI()), null);
+            fileSystem = FileSystems.newFileSystem(Paths.get(new File(path).toURI()), (ClassLoader) null);
         } catch (IOException e) {
             throw new InitException(e);
         }
