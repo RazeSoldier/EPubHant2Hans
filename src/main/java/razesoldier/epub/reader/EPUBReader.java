@@ -67,7 +67,7 @@ public class EPUBReader implements Closeable {
             return "Invalid mimetype file";
         }
 
-        if (!entryExists("META-INF/container.xml")) {
+        if (entryNoExists("META-INF/container.xml")) {
             return "META-INF/container.xml file not found";
         }
         return null;
@@ -112,9 +112,9 @@ public class EPUBReader implements Closeable {
     }
 
 
-    private boolean entryExists(@NotNull String entry) {
+    private boolean entryNoExists(@NotNull String entry) {
         Path path = fileSystem.getPath(entry);
-        return Files.exists(path);
+        return !Files.exists(path);
     }
 
     public EPUBBook getBook() {
@@ -122,7 +122,7 @@ public class EPUBReader implements Closeable {
     }
 
     private String readFile(@NotNull String entry) throws ZipReadException, ZipEntryNotFoundException {
-        if (!entryExists(entry)) {
+        if (entryNoExists(entry)) {
             throw new ZipEntryNotFoundException(entry);
         }
         Path path = fileSystem.getPath(entry);
@@ -135,7 +135,7 @@ public class EPUBReader implements Closeable {
 
     @NotNull
     public InputStream readFileWithStream(@NotNull String filepath) throws ZipReadException, ZipEntryNotFoundException {
-        if (!entryExists(filepath)) {
+        if (entryNoExists(filepath)) {
             throw new ZipEntryNotFoundException(filepath);
         }
         Path path = fileSystem.getPath(filepath);
